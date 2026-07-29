@@ -16,6 +16,10 @@
 - 編集とプレビューが左右スワイプで出来る
 - よく使う記号のショートカットがキーボード上に常時出てくる
 
+## [document & reader](https://apps.apple.com/jp/app/documents-reader-files-browser/id1074662118)
+
+自作のhtml完結型webツール動かすのに使う
+
 ## [GitSynk](https://apps.apple.com/jp/app/gitsync/id6744980427)  
 
 iPhone用のGitクライアント　　
