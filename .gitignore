@@ -14,4 +14,4 @@
 !*.js
 !*.csv
 
-!/picture
+!picture/
