@@ -11,10 +11,12 @@
 - ユーザー切り替えが少しダルい
 
 ## [シンプルマークダウン](https://apps.apple.com/jp/app/%E3%82%B7%E3%83%B3%E3%83%97%E3%83%AB%E3%83%9E%E3%83%BC%E3%82%AF%E3%83%80%E3%82%A6%E3%83%B3-markdown%E3%81%A7%E3%83%8E%E3%83%BC%E3%83%88%E3%82%92%E6%89%8B%E8%BB%BD%E3%81%AB/id6444049843)
-
+!FIXME 致命的な欠点
 ### 長所
 - 編集とプレビューが左右スワイプで出来る
 - よく使う記号のショートカットがキーボード上に常時出てくる
+### 短所
+- 5ファイルまでしか無料版は使えない
 
 ## [document & reader](https://apps.apple.com/jp/app/documents-reader-files-browser/id1074662118)
 
