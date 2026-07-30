@@ -16,7 +16,7 @@
 - 編集とプレビューが左右スワイプで出来る
 - よく使う記号のショートカットがキーボード上に常時出てくる
 ### 短所
-- 5ファイルまでしか無料版は使えない
+- **5ファイルまでしか無料版は使えない**
 
 ## [document & reader](https://apps.apple.com/jp/app/documents-reader-files-browser/id1074662118)
 
