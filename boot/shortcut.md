@@ -5,7 +5,8 @@
 
 # util
 - AI
-	- [Gemini](https://gemini.google.com/app)
+	- [Gemini](https://gemini.google.com/app) / 
+	chatGPT
 
 # ポイ活
 ## アンケート
