@@ -1,0 +1,37 @@
+# 暫定
+https://huonchan.github.io/immortal/
+
+https://huonchan.github.io/immortal/document/game/yo-kai_watch_4/crank_a_kai
+
+https://huonchan.github.io/immortal/document/game/yo-kai_watch_4/crank_a_kai/template.html
+
+
+
+
+# immortal
+リブート用
+
+どう使おうが構わんが、いかなる損害や表現の不快感にも責任取らない。そんな事で傷付く豆腐メンタルはネット辞めてネットとSIM解約してwifi接続機能ある全ての機器をメルカリで売るなりして処分してこい。今すぐにだ。
+
+## Github選定理由
+gitlabは企業による複数人開発向けのオールインワンパッケージ。
+
+個人用途にはオーバースペックすぎる。
+
+それにリポジトリの推奨最大容量1ギガは日本語にしておおよそ50億文字。
+文庫本にしておおよそ3300冊。
+一般の人類の寿命では打ち切れる文字数では無い。
+
+サードパーティツールの多さも決め手の一つだ。
+
+# フォルダ、ファイル命名規則
+
+将来的にバッチ処理にかける可能性あるものは半角英数。それ以外は日本語でも英語でも韓国語でも好きにしろ。
+
+# 記法
+md記法に基本基づく
+
+- FIXME! 問題がある技術または記述
+- OMIT! 廃止
+
+あ

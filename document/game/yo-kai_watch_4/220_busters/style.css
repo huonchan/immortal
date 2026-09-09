@@ -1,0 +1,80 @@
+/* ==================================================
+   1. デフォルト設定（ライトモード時の色定義）
+   ================================================== */
+:root {
+    --bg-color: #f8f9fa;        /* 背景色（明るいグレー） */
+    --card-bg: #ffffff;         /* カード背景（白） */
+    --text-color: #212529;      /* 文字色（ダークグレー） */
+    --border-color: #e9ecef;    /* 枠線 */
+    --accent-color: #0d6efd;    /* アクセントカラー（青） */
+}
+
+/* ===================================================
+   2. OSのシステム設定が「ダークモード」の場合の自動適用
+   =================================================== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #121212;    /* 背景色（落ち着いた黒） */
+        --card-bg: #1e1e1e;     /* カード背景（濃いグレー） */
+        --text-color: #e0e0e0;  /* 文字色（オフホワイト） */
+        --border-color: #333333;/* 枠線 */
+        --accent-color: #6ea8fe;/* アクセントカラー（明るめの青） */
+    }
+}
+
+/* ===================================================
+   3. 手動切り替え用（HTMLに data-theme="..." が付いた場合）
+   =================================================== */
+[data-theme="dark"] {
+    --bg-color: #121212;
+    --card-bg: #1e1e1e;
+    --text-color: #e0e0e0;
+    --border-color: #333333;
+    --accent-color: #6ea8fe;
+}
+
+[data-theme="light"] {
+    --bg-color: #f8f9fa;
+    --card-bg: #ffffff;
+    --text-color: #212529;
+    --border-color: #e9ecef;
+    --accent-color: #0d6efd;
+}
+
+/* ===================================================
+   4. 各要素のスタイリング（変数を利用）
+   =================================================== */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: sans-serif;
+    margin: 0;
+    padding: 20px;
+    /* モード切替時に色がじわっと滑らかに変わるアニメーション */
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+button {
+    background-color: var(--accent-color);
+    color: #ffffff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
