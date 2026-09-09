@@ -1,3 +1,13 @@
+# 暫定
+https://huonchan.github.io/immortal/
+
+https://huonchan.github.io/immortal/document/game/yo-kai_watch_4/crank_a_kai
+
+https://huonchan.github.io/immortal/document/game/yo-kai_watch_4/crank_a_kai/template.html
+
+
+
+
 # immortal
 リブート用
 
