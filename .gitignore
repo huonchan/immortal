@@ -13,5 +13,6 @@
 !*.html
 !*.js
 !*.csv
+!＊.css
 
 !picture
