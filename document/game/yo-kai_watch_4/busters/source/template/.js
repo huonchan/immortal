@@ -1,50 +1,12 @@
+const title = " ";
 /* 報酬 */
 const rewardData = `
-Bジバニャンの魂・金,5
-Bコマさんの魂・金,8
-B-USAピョンの魂・金,8
-大けいけんちだま,23
-銀のこけし,16
-ガシャコイン,7
-モノノケの魂,27
-オマモリの魂,17
-ウワノソラの魂,18
-ミュージックカード,3
+
 `;
 
 /* ドロップ品 */
 const dropData = `
 
-Fジバニャンの魂・白,45
-Fコマさんの魂・白,43
-コマじろうの魂・白,53
-Fコマじろうの魂・白,68
-猫又の魂・白,57
-,
-Fジバニャンの魂・赤,12
-Fコマさんの魂・赤,8
-コマじろうの魂・赤,18
-Fコマじろうの魂・赤,10
-猫又の魂・赤,15
-Fジバニャンの魂・金,4
-Fコマさんの魂・金,3
-コマじろうの魂・金,2
-Fコマじろうの魂・金,1
-猫又の魂・金,3
-,
-ミニけいけんちだま,6
-小けいけんちだま,30
-中けいけんちだま,69
-大けいけんちだま,66
-超けいけんちだま,8
-鉄のこけし,4
-銅のこけし,23
-銀のこけし,56
-金のこけし,85
-プラチナのこけし,18
-鬼ガシャコイン,55
-鬼ガシャコイン・超,55
-,
 `;
 
 /* 報酬 */
@@ -115,8 +77,7 @@ dropArray.forEach(item => {
   dropListContainer.appendChild(li);
 });
 
-const title = document.getElementById('title');
-title.innerHTML = "妖怪ウォッチバスターズ_グリッチ利用";
+const titleContainer = document.getElementById('title');
+titleContainer.innerHTML = title;
 
-
-document.title = "妖怪ウォッチバスターズ_グリッチ利用";
+document.title = title;
