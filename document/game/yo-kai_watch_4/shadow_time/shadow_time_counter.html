@@ -41,6 +41,8 @@ h2{font-size:15px;margin:14px 0 6px;color:var(--mute);font-weight:600}
 .legend{position:sticky;top:0;z-index:2;background:var(--bg);padding:6px 6px 4px;margin-top:8px;font-size:12px;text-align:center}
 .c-total{color:#aab1c8}.c-gold{color:var(--gold)}.c-red{color:var(--red)}.c-white{color:var(--white)}
 .empty{color:var(--mute);font-size:13px;padding:6px 2px}
+.exp+.exp{margin-top:10px}
+.exp.sec{background:#262a36;border-color:var(--line);color:var(--text)}
 .exp{width:100%;margin-top:22px;min-height:50px;background:var(--accent);border-color:var(--accent);color:#10121a;font-weight:700}
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#323747;padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
 #toast.on{opacity:1}
@@ -195,22 +197,18 @@ function render(){
   var ex=el('button',{cls:'exp',text:'HTMLエクスポート'});
   ex.addEventListener('click',exportHtml);
   app.appendChild(ex);
+  var tx=el('button',{cls:'exp sec',text:'TSVエクスポート'});
+  tx.addEventListener('click',exportTsv);
+  app.appendChild(tx);
   window.scrollTo(0,y);
 }
 
-async function exportHtml(){
-  var clone=document.documentElement.cloneNode(true);
-  clone.querySelector('#app').innerHTML='';
-  clone.querySelector('#toast').textContent='';
-  clone.querySelector('#toast').className='';
-  var json=JSON.stringify(state).replace(/</g,'\\u003c');
-  clone.querySelector('#embedded').textContent='window.__EMBEDDED__='+json+';';
-  var html='<!DOCTYPE html>\n'+clone.outerHTML;
-  var blob=new Blob([html],{type:'text/html;charset=utf-8'});
-  var name=state.fileName.replace(/[\\\/:*?"<>|]/g,'_')+'.html';
+function safeName(){return state.fileName.replace(/[\\\/:*?"<>|]/g,'_');}
+async function saveFile(blob,name,mime,ext,desc){
   if(window.showSaveFilePicker){
     try{
-      var h=await window.showSaveFilePicker({suggestedName:name,types:[{description:'HTML',accept:{'text/html':['.html']}}]});
+      var acc={};acc[mime]=[ext];
+      var h=await window.showSaveFilePicker({suggestedName:name,types:[{description:desc,accept:acc}]});
       var w=await h.createWritable();await w.write(blob);await w.close();
       toast('保存しました');return;
     }catch(e){if(e&&e.name==='AbortError')return;}
@@ -220,6 +218,28 @@ async function exportHtml(){
   document.body.appendChild(a);a.click();a.remove();
   setTimeout(function(){URL.revokeObjectURL(a.href);},10000);
   toast('ダウンロードを開始しました');
+}
+function exportHtml(){
+  var clone=document.documentElement.cloneNode(true);
+  clone.querySelector('#app').innerHTML='';
+  clone.querySelector('#toast').textContent='';
+  clone.querySelector('#toast').className='';
+  var json=JSON.stringify(state).replace(/</g,'\\u003c');
+  clone.querySelector('#embedded').textContent='window.__EMBEDDED__='+json+';';
+  var html='<!DOCTYPE html>\n'+clone.outerHTML;
+  saveFile(new Blob([html],{type:'text/html;charset=utf-8'}),safeName()+'.html','text/html','.html','HTML');
+}
+function exportTsv(){
+  function cell(v){return String(v).replace(/[\t\r\n]+/g,' ');}
+  var lines=[['ラベル名','名前','合計','金魂','赤魂','白魂'].join('\t')];
+  [['通常妖怪シンボル',state.normal],['特殊妖怪シンボル',state.special]].forEach(function(sec){
+    lines.push(sec[0]);
+    sec[1].forEach(function(y){
+      lines.push([cell(y.label),cell(y.name),y.total,y.gold,y.red,y.white].join('\t'));
+    });
+  });
+  var text='\uFEFF'+lines.join('\r\n')+'\r\n';
+  saveFile(new Blob([text],{type:'text/tab-separated-values;charset=utf-8'}),safeName()+'.tsv','text/tab-separated-values','.tsv','TSV');
 }
 
 init();
