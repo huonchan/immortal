@@ -51,10 +51,9 @@ h2{font-size:15px;margin:14px 0 6px;color:var(--mute);font-weight:600}
 <body>
 <div id="app"></div>
 <div id="toast"></div>
-<script id="embedded">window.__EMBEDDED__=null;</script>
 <script>
 (function(){
-var DKEY='ykw4d:',LAST='ykw4-last',DEFNAME='シャドウタイム集計';
+var KEY='shadow_time_counter',DEFNAME='シャドウタイム集計';
 var FIELDS=[['total','合計','c-total'],['gold','金魂','c-gold'],['red','赤魂','c-red'],['white','白魂','c-white']];
 var state;
 
@@ -72,21 +71,12 @@ function clean(o){
   });
   return s;
 }
-function persist(){ls(DKEY+state.fileName,JSON.stringify(state));ls(LAST,state.fileName);}
+function persist(){ls(KEY,JSON.stringify(state));}
 
 function init(){
-  var emb=window.__EMBEDDED__?clean(window.__EMBEDDED__):null;
-  var local=null;
-  if(emb){
-    var raw=ls(DKEY+emb.fileName);
-    local=raw&&parse(raw)?clean(parse(raw)):null;
-    if(local&&JSON.stringify(local)!==JSON.stringify(emb)){
-      state=confirm('このブラウザに未エクスポートの一時保存データがあります。\nOK：一時保存データを使う\nキャンセル：HTMLに保存されたデータを使う')?local:emb;
-    }else state=emb;
-  }else{
-    var last=ls(LAST),r=last?ls(DKEY+last):null;
-    state=r&&parse(r)?clean(parse(r)):blank();
-  }
+  try{Object.keys(localStorage).forEach(function(k){if(k.indexOf('ykw4d:')===0||k==='ykw4-last')localStorage.removeItem(k);});}catch(e){}
+  var r=ls(KEY);
+  state=r&&parse(r)?clean(parse(r)):blank();
   persist();
   render();
 }
@@ -155,12 +145,9 @@ function render(){
   var y=window.scrollY;
   var app=document.getElementById('app');
   app.innerHTML='';
-  var file=el('input',{cls:'file',value:state.fileName,'aria-label':'ファイル名'});
-  file.addEventListener('change',function(){
-    var old=state.fileName,nn=file.value.trim()||DEFNAME;
-    if(nn!==old&&ls(DKEY+nn)!==null&&!confirm('同名の一時保存データを上書きします。よろしいですか？')){file.value=old;return;}
-    ls(DKEY+old,null);state.fileName=nn;file.value=nn;persist();
-  });
+  var file=el('input',{cls:'file',value:state.fileName,'aria-label':'タイトル'});
+  file.addEventListener('input',function(){state.fileName=file.value;persist();});
+  file.addEventListener('change',function(){if(!file.value.trim()){state.fileName=file.value=DEFNAME;persist();}});
   var note=el('textarea',{placeholder:'備考','aria-label':'備考'});
   note.value=state.note;
   note.addEventListener('input',function(){state.note=note.value;persist();});
@@ -194,16 +181,19 @@ function render(){
   app.appendChild(section('通常妖怪',state.normal));
   app.appendChild(section('特殊妖怪',state.special));
 
-  var ex=el('button',{cls:'exp',text:'HTMLエクスポート'});
-  ex.addEventListener('click',exportHtml);
-  app.appendChild(ex);
+  var ex=el('button',{cls:'exp',text:'MDエクスポート'});
+  ex.addEventListener('click',exportMd);
+  var im=el('button',{cls:'exp sec',text:'MDインポート'});
+  var fi=el('input',{type:'file',accept:'.md,.markdown,text/markdown,text/plain',style:'display:none'});
+  im.addEventListener('click',function(){fi.click();});
+  fi.addEventListener('change',function(){if(fi.files&&fi.files[0])importMd(fi.files[0]);fi.value='';});
   var tx=el('button',{cls:'exp sec',text:'TSVエクスポート'});
   tx.addEventListener('click',exportTsv);
-  app.appendChild(tx);
+  [ex,im,tx,fi].forEach(function(n){app.appendChild(n);});
   window.scrollTo(0,y);
 }
 
-function safeName(){return state.fileName.replace(/[\\\/:*?"<>|]/g,'_');}
+function safeName(){return (state.fileName.trim()||DEFNAME).replace(/[\\\/:*?"<>|]/g,'_');}
 async function saveFile(blob,name,mime,ext,desc){
   if(window.showSaveFilePicker){
     try{
@@ -219,21 +209,104 @@ async function saveFile(blob,name,mime,ext,desc){
   setTimeout(function(){URL.revokeObjectURL(a.href);},10000);
   toast('ダウンロードを開始しました');
 }
-function exportHtml(){
-  var clone=document.documentElement.cloneNode(true);
-  clone.querySelector('#app').innerHTML='';
-  clone.querySelector('#toast').textContent='';
-  clone.querySelector('#toast').className='';
-  var json=JSON.stringify(state).replace(/</g,'\\u003c');
-  clone.querySelector('#embedded').textContent='window.__EMBEDDED__='+json+';';
-  var html='<!DOCTYPE html>\n'+clone.outerHTML;
-  saveFile(new Blob([html],{type:'text/html;charset=utf-8'}),safeName()+'.html','text/html','.html','HTML');
+function mdEsc(v){return String(v).replace(/\\/g,'\\\\').replace(/\|/g,'\\|').replace(/[\r\n]+/g,' ');}
+function pct(n,sum){return sum>0?(n/sum*100).toFixed(2)+'%':'-';}
+function sumOf(list){return list.reduce(function(a,y){return a+y.total;},0);}
+function buildMd(){
+  var L=[],sumN=sumOf(state.normal);
+  L.push('# '+state.fileName.replace(/[\r\n]+/g,' '));
+  L.push('## 備考');
+  L.push(state.note.replace(/\r\n?/g,'\n').split('\n').map(function(l){return /^#/.test(l)?'\\'+l:l;}).join('  \n'));
+  L.push('## 周回数');
+  L.push(state.totalSymbols>0?(sumN/state.totalSymbols).toFixed(2):'-');
+  L.push('## シンボル数');
+  L.push(String(state.totalSymbols));
+  L.push('');
+  [['通常',state.normal],['特殊',state.special]].forEach(function(sec){
+    var list=sec[1],sum=sumOf(list);
+    L.push('## '+sec[0]+'シンボル集計');
+    L.push('総合計:'+sum);
+    L.push('');
+    L.push('| ラベル | 名前 | 合計 | 割合 |');
+    L.push('| ---- | ---- | ---- | ---- |');
+    list.forEach(function(y){L.push('| '+mdEsc(y.label)+' | '+mdEsc(y.name)+' | '+y.total+' | '+pct(y.total,sum)+' |');});
+    L.push('');
+    L.push('## '+sec[0]+'妖怪魂集計');
+    L.push('');
+    L.push('| ラベル | 名前 | 金 | 赤 | 白 |');
+    L.push('| ---- | ---- | ---- | ---- | ---- |');
+    list.forEach(function(y){L.push('| '+mdEsc(y.label)+' | '+mdEsc(y.name)+' | '+y.gold+' | '+y.red+' | '+y.white+' |');});
+    L.push('');
+  });
+  return L.join('\n');
+}
+function exportMd(){
+  saveFile(new Blob([buildMd()],{type:'text/markdown;charset=utf-8'}),safeName()+'.md','text/markdown','.md','Markdown');
+}
+function splitRow(line){
+  var t=line.trim(),cells=[],cur='';
+  if(t[0]==='|')t=t.slice(1);
+  for(var i=0;i<t.length;i++){
+    var c=t[i];
+    if(c==='\\'&&(t[i+1]==='|'||t[i+1]==='\\')){cur+=t[i+1];i++;}
+    else if(c==='|'){cells.push(cur.trim());cur='';}
+    else cur+=c;
+  }
+  if(cur.trim()!=='')cells.push(cur.trim());
+  return cells;
+}
+function tableRows(lines){
+  var rows=lines.filter(function(l){return l.trim()[0]==='|';}).map(splitRow);
+  return rows.slice(1).filter(function(r){return !r.every(function(c){return /^:?-+:?$/.test(c);});});
+}
+function num(v){return int(String(v||'').replace(/[,\s]/g,''));}
+function parseMd(text){
+  var lines=text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n').split('\n');
+  var title=null,secs={},cur=null;
+  lines.forEach(function(l){
+    var m;
+    if((m=/^##\s+(.+?)\s*$/.exec(l))){cur=m[1];secs[cur]=[];}
+    else if((m=/^#\s+(.+?)\s*$/.exec(l))){if(title===null)title=m[1];cur=null;}
+    else if(cur!==null)secs[cur].push(l);
+  });
+  var keys=['通常シンボル集計','通常妖怪魂集計','特殊シンボル集計','特殊妖怪魂集計'];
+  if(title===null&&!keys.some(function(k){return secs[k];}))return null;
+  var s=blank();
+  if(title)s.fileName=title;
+  if(secs['備考'])s.note=secs['備考'].map(function(l){return l.replace(/ {2}$/,'').replace(/^\\#/,'#');}).join('\n').replace(/^\n+|\n+$/g,'');
+  if(secs['シンボル数']){var f=secs['シンボル数'].filter(function(l){return l.trim();})[0];s.totalSymbols=num(f);}
+  [['normal','通常'],['special','特殊']].forEach(function(p){
+    var sym=tableRows(secs[p[1]+'シンボル集計']||[]),soul=tableRows(secs[p[1]+'妖怪魂集計']||[]);
+    var used={},list=[];
+    sym.forEach(function(r,i){
+      var y={label:r[0]||'',name:r[1]||'',total:num(r[2]),gold:0,red:0,white:0},j=-1,k;
+      function same(q){return q&&q[0]===r[0]&&q[1]===r[1];}
+      if(!used[i]&&same(soul[i]))j=i;
+      else for(k=0;k<soul.length;k++){if(!used[k]&&same(soul[k])){j=k;break;}}
+      if(j<0&&soul[i]&&!used[i])j=i;
+      if(j>=0){used[j]=1;y.gold=num(soul[j][2]);y.red=num(soul[j][3]);y.white=num(soul[j][4]);}
+      list.push(y);
+    });
+    soul.forEach(function(r,k){if(!used[k])list.push({label:r[0]||'',name:r[1]||'',total:0,gold:num(r[2]),red:num(r[3]),white:num(r[4])});});
+    s[p[0]]=list;
+  });
+  return clean(s);
+}
+function importMd(file){
+  var rd=new FileReader();
+  rd.onload=function(){
+    var s=parseMd(String(rd.result));
+    if(!s){alert('読み込めませんでした。このツールで書き出したmdファイルを選んでください。');return;}
+    if(!confirm('現在のデータを削除して、「'+s.fileName+'」を読み込みます。よろしいですか？'))return;
+    ls(KEY,null);state=s;persist();render();toast('読み込みました');
+  };
+  rd.readAsText(file,'UTF-8');
 }
 function exportTsv(){
   function cell(v){return String(v).replace(/[\t\r\n]+/g,' ');}
   var lines=[['ラベル名','名前','合計','金魂','赤魂','白魂'].join('\t')];
   [['通常妖怪シンボル',state.normal],['特殊妖怪シンボル',state.special]].forEach(function(sec){
-    lines.push(sec[0]);
+    lines.push(['',sec[0],'','','',''].join('\t'));
     sec[1].forEach(function(y){
       lines.push([cell(y.label),cell(y.name),y.total,y.gold,y.red,y.white].join('\t'));
     });
