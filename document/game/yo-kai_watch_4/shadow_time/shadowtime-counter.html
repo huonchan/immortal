@@ -38,6 +38,10 @@ h2{font-size:15px;margin:14px 0 6px;color:var(--mute);font-weight:600}
 .cell input{flex:1 1 auto;min-width:0;max-width:4em;text-align:center;padding:0 1px;font-weight:700;-moz-appearance:textfield;appearance:textfield}
 .cell input::-webkit-outer-spin-button,.cell input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .cell button{flex:none;width:30px;padding:0;font-weight:700}
+.cell button.last{border-width:2px}
+.cell button.last.c-gold{background:rgba(255,210,63,.3);border-color:var(--gold)}
+.cell button.last.c-red{background:rgba(255,90,90,.3);border-color:var(--red)}
+.cell button.last.c-white{background:rgba(255,255,255,.28);border-color:var(--white)}
 .legend{position:sticky;top:0;z-index:2;background:var(--bg);padding:6px 6px 4px;margin-top:8px;font-size:12px;text-align:center}
 .c-total{color:#aab1c8}.c-gold{color:var(--gold)}.c-red{color:var(--red)}.c-white{color:var(--white)}
 .empty{color:var(--mute);font-size:13px;padding:6px 2px}
@@ -55,7 +59,7 @@ h2{font-size:15px;margin:14px 0 6px;color:var(--mute);font-weight:600}
 (function(){
 var KEY='shadow_time_counter',DEFNAME='シャドウタイム集計';
 var FIELDS=[['total','合計','c-total'],['gold','金魂','c-gold'],['red','赤魂','c-red'],['white','白魂','c-white']];
-var state;
+var state,lastSel=null,lastEl=null;
 
 function blank(){return{fileName:DEFNAME,note:'',totalSymbols:0,normal:[],special:[]};}
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch(e){}return null;}
@@ -71,12 +75,26 @@ function clean(o){
   });
   return s;
 }
-function persist(){ls(KEY,JSON.stringify(state));}
+function lastRef(){
+  if(!lastSel)return null;
+  var ls_=['normal','special'];
+  for(var n=0;n<2;n++){var i=state[ls_[n]].indexOf(lastSel.item);if(i>=0)return{l:ls_[n],i:i,k:lastSel.key};}
+  return null;
+}
+function persist(){
+  var d=JSON.parse(JSON.stringify(state));
+  d.last=lastRef();
+  ls(KEY,JSON.stringify(d));
+}
 
 function init(){
   try{Object.keys(localStorage).forEach(function(k){if(k.indexOf('ykw4d:')===0||k==='ykw4-last')localStorage.removeItem(k);});}catch(e){}
   var r=ls(KEY);
-  state=r&&parse(r)?clean(parse(r)):blank();
+  var o=r?parse(r):null;
+  state=o?clean(o):blank();
+  if(o&&o.last&&state[o.last.l]&&state[o.last.l][o.last.i]&&['gold','red','white'].indexOf(o.last.k)>=0){
+    lastSel={item:state[o.last.l][o.last.i],key:o.last.k};
+  }
   persist();
   render();
 }
@@ -127,7 +145,15 @@ function row(list,item){
     inp.addEventListener('input',function(){item[k]=int(inp.value);persist();updateLaps();});
     inp.addEventListener('blur',function(){inp.value=item[k];});
     var btn=el('button',{text:'+1','aria-label':f[1]+'に+1',cls:f[2]});
-    btn.addEventListener('click',function(){item[k]++;inp.value=item[k];persist();updateLaps();});
+    if(k!=='total'&&lastSel&&lastSel.item===item&&lastSel.key===k){btn.classList.add('last');lastEl=btn;}
+    btn.addEventListener('click',function(){
+      item[k]++;inp.value=item[k];
+      if(k!=='total'){
+        if(lastEl)lastEl.classList.remove('last');
+        btn.classList.add('last');lastEl=btn;lastSel={item:item,key:k};
+      }
+      persist();updateLaps();
+    });
     grid.appendChild(el('div',{cls:'cell'},[inp,btn]));
   });
   var card=el('div',{cls:'card'},[el('div',{cls:'head'},[lab,nm,up,dn,del]),grid]);
@@ -298,7 +324,7 @@ function importMd(file){
     var s=parseMd(String(rd.result));
     if(!s){alert('読み込めませんでした。このツールで書き出したmdファイルを選んでください。');return;}
     if(!confirm('現在のデータを削除して、「'+s.fileName+'」を読み込みます。よろしいですか？'))return;
-    ls(KEY,null);state=s;persist();render();toast('読み込みました');
+    ls(KEY,null);state=s;lastSel=lastEl=null;persist();render();toast('読み込みました');
   };
   rd.readAsText(file,'UTF-8');
 }
