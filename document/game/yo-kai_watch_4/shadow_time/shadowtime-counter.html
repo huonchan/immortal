@@ -41,6 +41,7 @@ h2{font-size:15px;margin:14px 0 6px;color:var(--mute);font-weight:600}
 .cell button.last{border-width:2px}
 .cell button.last.c-gold{background:rgba(255,210,63,.3);border-color:var(--gold)}
 .cell button.last.c-red{background:rgba(255,90,90,.3);border-color:var(--red)}
+.cell button.last.c-total{background:rgba(170,177,200,.3);border-color:#aab1c8}
 .cell button.last.c-white{background:rgba(255,255,255,.28);border-color:var(--white)}
 .legend{position:sticky;top:0;z-index:2;background:var(--bg);padding:6px 6px 4px;margin-top:8px;font-size:12px;text-align:center}
 .c-total{color:#aab1c8}.c-gold{color:var(--gold)}.c-red{color:var(--red)}.c-white{color:var(--white)}
@@ -59,7 +60,7 @@ h2{font-size:15px;margin:14px 0 6px;color:var(--mute);font-weight:600}
 (function(){
 var KEY='shadow_time_counter',DEFNAME='シャドウタイム集計';
 var FIELDS=[['total','合計','c-total'],['gold','金魂','c-gold'],['red','赤魂','c-red'],['white','白魂','c-white']];
-var state,lastSel=null,lastEl=null;
+var state,lastSel={total:null,soul:null},lastEl={total:null,soul:null};
 
 function blank(){return{fileName:DEFNAME,note:'',totalSymbols:0,normal:[],special:[]};}
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch(e){}return null;}
@@ -75,11 +76,25 @@ function clean(o){
   });
   return s;
 }
+function grp(k){return k==='total'?'total':'soul';}
 function lastRef(){
-  if(!lastSel)return null;
-  var ls_=['normal','special'];
-  for(var n=0;n<2;n++){var i=state[ls_[n]].indexOf(lastSel.item);if(i>=0)return{l:ls_[n],i:i,k:lastSel.key};}
-  return null;
+  var out={},a=['normal','special'];
+  ['total','soul'].forEach(function(g){
+    var sel=lastSel[g],r=null;
+    if(sel)for(var n=0;n<2;n++){var i=state[a[n]].indexOf(sel.item);if(i>=0){r={l:a[n],i:i,k:sel.key};break;}}
+    out[g]=r;
+  });
+  return out;
+}
+function restoreLast(o){
+  lastSel={total:null,soul:null};
+  var d=o&&o.last;
+  if(!d)return;
+  if(d.l)d={soul:d};
+  [['total',['total']],['soul',['gold','red','white']]].forEach(function(p){
+    var r=d[p[0]];
+    if(r&&(r.l==='normal'||r.l==='special')&&state[r.l][r.i]&&p[1].indexOf(r.k)>=0)lastSel[p[0]]={item:state[r.l][r.i],key:r.k};
+  });
 }
 function persist(){
   var d=JSON.parse(JSON.stringify(state));
@@ -92,9 +107,7 @@ function init(){
   var r=ls(KEY);
   var o=r?parse(r):null;
   state=o?clean(o):blank();
-  if(o&&o.last&&state[o.last.l]&&state[o.last.l][o.last.i]&&['gold','red','white'].indexOf(o.last.k)>=0){
-    lastSel={item:state[o.last.l][o.last.i],key:o.last.k};
-  }
+  restoreLast(o);
   persist();
   render();
 }
@@ -145,13 +158,12 @@ function row(list,item){
     inp.addEventListener('input',function(){item[k]=int(inp.value);persist();updateLaps();});
     inp.addEventListener('blur',function(){inp.value=item[k];});
     var btn=el('button',{text:'+1','aria-label':f[1]+'に+1',cls:f[2]});
-    if(k!=='total'&&lastSel&&lastSel.item===item&&lastSel.key===k){btn.classList.add('last');lastEl=btn;}
+    var g=grp(k),sel=lastSel[g];
+    if(sel&&sel.item===item&&sel.key===k){btn.classList.add('last');lastEl[g]=btn;}
     btn.addEventListener('click',function(){
       item[k]++;inp.value=item[k];
-      if(k!=='total'){
-        if(lastEl)lastEl.classList.remove('last');
-        btn.classList.add('last');lastEl=btn;lastSel={item:item,key:k};
-      }
+      if(lastEl[g])lastEl[g].classList.remove('last');
+      btn.classList.add('last');lastEl[g]=btn;lastSel[g]={item:item,key:k};
       persist();updateLaps();
     });
     grid.appendChild(el('div',{cls:'cell'},[inp,btn]));
@@ -324,7 +336,7 @@ function importMd(file){
     var s=parseMd(String(rd.result));
     if(!s){alert('読み込めませんでした。このツールで書き出したmdファイルを選んでください。');return;}
     if(!confirm('現在のデータを削除して、「'+s.fileName+'」を読み込みます。よろしいですか？'))return;
-    ls(KEY,null);state=s;lastSel=lastEl=null;persist();render();toast('読み込みました');
+    ls(KEY,null);state=s;lastSel={total:null,soul:null};lastEl={total:null,soul:null};persist();render();toast('読み込みました');
   };
   rd.readAsText(file,'UTF-8');
 }
