@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ガシャ統計ツール</title>
+<style>
+:root{color-scheme:dark;--bg:#14161a;--card:#1d2026;--line:#2c313a;--tx:#e8eaed;--sub:#8e949e;--ac:#7cc4ff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;padding-bottom:40vh}
+[data-r="黒"]{--c:#000;--f:#fff;--b:#777}
+[data-r="金"]{--c:#f5c518;--f:#201a00;--b:#f5c518}
+[data-r="赤"]{--c:#e5484d;--f:#fff;--b:#e5484d}
+[data-r="青"]{--c:#3b82f6;--f:#fff;--b:#3b82f6}
+[data-r="灰"]{--c:#6b7280;--f:#fff;--b:#6b7280}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.top{display:flex;gap:6px;padding:8px 8px 4px}
+.ttl{flex:1;font-weight:700}
+input,select,textarea{background:#262a32;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;min-width:0}
+textarea{width:100%;margin-bottom:6px}
+.b{min-height:40px;min-width:40px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#2a2f38;color:var(--tx);font:inherit;cursor:pointer}
+.b.s{min-width:36px;padding:0 6px}
+.b.p{min-width:56px;font-weight:700}
+.b.on,.b.hit{background:var(--ac);color:#05121c;border-color:var(--ac);font-weight:700}
+.b[data-r]{background:var(--c);color:var(--f);border-color:var(--b);font-weight:700}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 8px 8px;scrollbar-width:none}
+.tab{flex:none;min-height:36px;padding:0 14px;border-radius:18px;border:1px solid var(--line);background:#22262d;color:var(--tx);font:inherit}
+.tab.on{background:var(--tx);color:#111;font-weight:700}
+main{padding:8px;max-width:640px;margin:0 auto}
+.top2{display:flex;gap:6px;margin-bottom:8px}.top2 input{flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{flex:1 1 30%;display:flex;align-items:baseline;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 8px;font-weight:700;font-size:16px}
+.chip small{margin-left:auto;color:var(--sub);font-weight:400;font-size:12px}
+.bd{display:inline-block;min-width:2.2em;text-align:center;padding:1px 6px;border-radius:6px;background:var(--c);color:var(--f);border:1px solid var(--b);font-weight:700;font-size:13px}
+details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:8px}
+summary{cursor:pointer;font-weight:700}
+.ml{margin:8px 0 4px;font-weight:700}
+.list{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:8px}
+.row{display:flex;align-items:center;gap:6px;padding:4px 8px;border-bottom:1px solid var(--line);border-left:4px solid var(--b)}
+.row:last-child{border-bottom:0}
+.nm{flex:1;min-width:0;overflow-wrap:anywhere}
+.ct{min-width:64px;text-align:right;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.ct small{display:block;color:var(--sub);font-weight:400;font-size:11px}
+.row.ed{flex-wrap:wrap}
+.nmi{flex:1;min-width:110px}.cti{width:72px}
+.empty{padding:16px;color:var(--sub);text-align:center}
+.addbar{display:flex;align-items:center;gap:6px;margin-top:8px}
+h3{font-size:14px;margin:16px 0 6px;color:var(--sub)}
+.scroll{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;background:var(--card)}
+.tbl th,.tbl td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child,.tbl td:nth-child(2){text-align:left}
+dialog{width:min(92vw,560px);background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:12px;padding:12px}
+dialog::backdrop{background:#000a}
+#dta{height:50vh;font-size:13px;white-space:pre;margin:0}
+.dh{font-weight:700;margin-bottom:6px}
+.dbar{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#e8eaed;color:#111;padding:8px 16px;border-radius:20px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<dialog id="dlg"><div class="dh" id="dt"></div><textarea id="dta"></textarea><div class="dbar" id="dbar"></div></dialog>
+<input type="file" id="fi" accept=".md,.txt,text/markdown,text/plain" hidden>
+<div id="toast"></div>
+<script>
+const RK=['黒','金','赤','青','灰'];
+const PL=[['大吉','黒・金'],['中吉','赤'],['小吉','青'],['末吉','灰']];
+const K=n=>'お品書き'+n+'配列';
+const KEY='yokai_gacha_counter';
+const $=id=>document.getElementById(id);
+const e=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pct=(n,t)=>(t?n/t*100:0).toFixed(2)+'%';
+const newTable=n=>({テーブル名:n,お品書き大吉配列:[],お品書き中吉配列:[],お品書き小吉配列:[],お品書き末吉配列:[],排出一覧:[]});
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&Array.isArray(d.tables)&&d.tables.length)return d}catch(x){}return{title:'妖怪ウォッチ4 ガシャ統計',tables:[newTable('テーブル1')]}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(x){}}
+let S=load(),cur=0,edit=false,last=null,fl=false,tabEnd=false,tabShow=false,menuOpen=false;
+
+const sums=l=>{const by=Object.fromEntries(RK.map(r=>[r,0]));l.forEach(x=>{if(x.ランク in by)by[x.ランク]+=x.排出数});return{by,t:RK.reduce((a,r)=>a+by[r],0)}};
+const merge=()=>{const m=new Map();S.tables.forEach(t=>t.排出一覧.forEach(x=>{const k=x.ランク+'\t'+x.名前,o=m.get(k);o?o.排出数+=x.排出数:m.set(k,{ランク:x.ランク,名前:x.名前,排出数:x.排出数})}));return[...m.values()].sort((a,b)=>RK.indexOf(a.ランク)-RK.indexOf(b.ランク))};
+
+/* ---- md ---- */
+const mdRows=(l,t)=>l.map(x=>`| ${x.ランク} | ${String(x.名前).replace(/\|/g,'｜')} | ${x.排出数} | ${pct(x.排出数,t)} |`).join('\n');
+const mdSum=l=>{const s=sums(l);return`- 全色合計:${s.t}\n`+RK.map(r=>`- ${r}:${s.by[r]}（${pct(s.by[r],s.t)}）`).join('\n')};
+function toMD(){
+ const all=merge(),a=sums(all);
+ let o=`# ${S.title}\n\n## 全合計\n${mdSum(all)}\n\n| 色 | 名前 | 排出数 | 割合 |\n| ---- | ---- | ---- | ---- |\n${mdRows(all,a.t)}\n\n---\n`;
+ S.tables.forEach(t=>{const l=t.排出一覧,s=sums(l);
+  o+=`\n## ${t.テーブル名}\n### お品書き\n`+PL.map(([n,c])=>`#### ${n}（${c}）\n`+t[K(n)].map(x=>`- ${x}\n`).join('')).join('')+`\n${mdSum(l)}\n\n### 排出統計\n| 色 | 名前 | 排出数 | 割合 |\n| ---- | ---- | ---- | ---- |\n${mdRows(l,s.t)}\n`});
+ return o}
+function fromMD(s){
+ let title=null,tb=[],t=null,mode=null,m;
+ for(const ln of s.replace(/\r/g,'').split('\n')){
+  if(title===null&&(m=ln.match(/^# (.+)/))){title=m[1].trim();continue}
+  if(m=ln.match(/^## (.+)/)){const n=m[1].trim();mode=null;if(n==='全合計')t=null;else{t=newTable(n);tb.push(t)}continue}
+  if(!t)continue;
+  if(m=ln.match(/^#### (大吉|中吉|小吉|末吉)/)){mode=m[1];continue}
+  if(/^### 排出統計/.test(ln)){mode='統計';continue}
+  if(/^### /.test(ln)){mode=null;continue}
+  if(mode==='統計'){
+   if(ln.startsWith('|')){const c=ln.split('|').slice(1,-1).map(x=>x.trim());if(c.length>=3&&RK.includes(c[0]))t.排出一覧.push({ランク:c[0],名前:c[1],排出数:parseInt(c[2])||0})}
+  }else if(mode){
+   if(/^- 全色合計/.test(ln))mode=null;
+   else if(m=ln.match(/^- (.*)/))t[K(mode)].push(m[1].trim());
+  }
+ }
+ if(!tb.length)throw new Error('テーブルが見つかりませんでした');
+ return{title:title||'ガシャ統計',tables:tb}
+}
+
+/* ---- view ---- */
+const chips=l=>{const s=sums(l);return`<div class="chips"><div class="chip">全色 ${s.t}</div>`+RK.map(r=>`<div class="chip" data-r="${r}"><span class="bd">${r}</span>${s.by[r]}<small>${pct(s.by[r],s.t)}</small></div>`).join('')+`</div>`};
+const da=(a,i,j)=>`data-a="${a}" data-i="${i}" data-j="${j}"`;
+const df=(f,i,j)=>`data-f="${f}" data-i="${i}" data-j="${j}"`;
+const row=(x,i,j,T)=>edit
+ ?`<div class="row ed" data-r="${x.ランク}"><select ${df('rank',i,j)}>${RK.map(r=>`<option${r===x.ランク?' selected':''}>${r}</option>`).join('')}</select><input class="nmi" list="dl" ${df('name',i,j)} value="${e(x.名前)}" placeholder="名前"><input class="cti" type="number" inputmode="numeric" min="0" ${df('cnt',i,j)} value="${x.排出数}"><button class="b s" ${da('up',i,j)}>↑</button><button class="b s" ${da('dn',i,j)}>↓</button><button class="b s" ${da('del',i,j)}>✕</button></div>`
+ :`<div class="row" data-r="${x.ランク}"><span class="bd">${x.ランク}</span><span class="nm">${e(x.名前)||'（名前なし）'}</span><span class="ct">${x.排出数}<small>${pct(x.排出数,T)}</small></span><button class="b" ${da('dec',i,j)}>−</button><button class="b p${last===i+':'+j?' hit':''}" ${da('inc',i,j)}>+1</button></div>`;
+function tableView(t,i){
+ const l=t.排出一覧,T=sums(l).t;
+ let h='';
+ if(edit)h+=`<div class="top2"><input data-f="tname" data-i="${i}" value="${e(t.テーブル名)}" placeholder="テーブル名"><button class="b s" data-a="tl" data-i="${i}">←</button><button class="b s" data-a="tr" data-i="${i}">→</button><button class="b" data-a="delT" data-i="${i}">削除</button></div>`;
+ h+=chips(l);
+ h+=`<details id="menu"${menuOpen?' open':''}><summary>お品書き</summary>`+PL.map(([n,c])=>`<div class="ml">${n} ${c.split('・').map(r=>`<span class="bd" data-r="${r}">${r}</span>`).join(' ')}</div><textarea data-f="menu" data-i="${i}" data-k="${n}" rows="3" placeholder="1行に1つ">${e(t[K(n)].join('\n'))}</textarea>`).join('')+`</details>`;
+ h+=`<datalist id="dl">${[...new Set(PL.flatMap(([n])=>t[K(n)]))].map(x=>`<option value="${e(x)}">`).join('')}</datalist>`;
+ h+=`<div class="list">`+(l.length?l.map((x,j)=>row(x,i,j,T)).join(''):`<div class="empty">排出項目がありません。「編集」から追加してください</div>`)+`</div>`;
+ if(edit)h+=`<div class="addbar">追加${RK.map(r=>`<button class="b" data-r="${r}" data-a="add" data-k="${r}" data-i="${i}">${r}</button>`).join('')}</div>`;
+ return h}
+function allView(){
+ const m=merge(),T=sums(m).t;
+ const cmp=[...S.tables.map(t=>[t.テーブル名,t.排出一覧]),['全体',m]].map(([n,l])=>{const s=sums(l);return`<tr><td>${e(n)}</td><td>${s.t}</td>${RK.map(r=>`<td>${pct(s.by[r],s.t)}</td>`).join('')}</tr>`}).join('');
+ return chips(m)
+  +`<h3>テーブル別 色の割合</h3><div class="scroll"><table class="tbl"><tr><th>テーブル</th><th>計</th>${RK.map(r=>`<th><span class="bd" data-r="${r}">${r}</span></th>`).join('')}</tr>${cmp}</table></div>`
+  +`<h3>合算 排出統計</h3><div class="scroll"><table class="tbl"><tr><th>色</th><th>名前</th><th>数</th><th>割合</th></tr>${m.map(x=>`<tr data-r="${x.ランク}"><td><span class="bd">${x.ランク}</span></td><td>${e(x.名前)}</td><td>${x.排出数}</td><td>${pct(x.排出数,T)}</td></tr>`).join('')}</table></div>`}
+function render(){
+ save();
+ const sx=document.querySelector('.tabs')?.scrollLeft,y=scrollY;
+ const tabs=`<div class="tabs"><button class="tab${cur<0?' on':''}" data-a="tab" data-i="-1">全合計</button>`+S.tables.map((t,i)=>`<button class="tab${cur===i?' on':''}" data-a="tab" data-i="${i}">${e(t.テーブル名)||'（名前なし）'}</button>`).join('')+`<button class="tab" data-a="addT">＋</button></div>`;
+ $('app').innerHTML=`<header><div class="top"><input class="ttl" data-f="title" value="${e(S.title)}"><button class="b${edit?' on':''}" data-a="edit">編集</button><button class="b" data-a="exp">書出</button><button class="b" data-a="imp">読込</button></div>${tabs}</header><main>${cur<0?allView():tableView(S.tables[cur],cur)}</main>`;
+ const tb=document.querySelector('.tabs');
+ if(sx!=null)tb.scrollLeft=sx;
+ if(tabEnd){tb.scrollLeft=1e5;tabEnd=false}
+ if(tabShow){tabShow=false;const o=tb.querySelector('.tab.on');if(o)tb.scrollLeft=o.offsetLeft-tb.clientWidth/2+o.offsetWidth/2}
+ scrollTo(0,y);
+ if(fl){fl=false;const q=document.querySelectorAll('input[data-f=name]');q.length&&q[q.length-1].focus()}
+}
+
+/* ---- dialog ---- */
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1600)}
+function openDlg(title,text,ro,bar){$('dt').textContent=title;$('dta').value=text;$('dta').readOnly=ro;$('dbar').innerHTML=bar+`<button class="b" data-a="close">閉じる</button>`;$('dlg').showModal()}
+const openExport=()=>openDlg('md書き出し',toMD(),true,`<button class="b on" data-a="copy">コピー</button><button class="b" data-a="save">ファイル保存</button>`);
+const openImport=()=>openDlg('md読み込み（現在のデータは置き換わります）','',false,`<button class="b" data-a="pick">ファイルを選ぶ</button><button class="b on" data-a="load">読み込む</button>`);
+async function copy(){const ta=$('dta');try{await navigator.clipboard.writeText(ta.value)}catch(x){ta.focus();ta.select();ta.setSelectionRange(0,1e9);document.execCommand('copy')}toast('コピーしました')}
+function download(){const a=document.createElement('a');const u=URL.createObjectURL(new Blob([$('dta').value],{type:'text/markdown'}));a.href=u;a.download=(S.title||'ガシャ統計')+'.md';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000)}
+function doImport(){
+ const s=$('dta').value;if(!s.trim()){toast('mdが空です');return}
+ let d;try{d=fromMD(s)}catch(x){alert(x.message);return}
+ if(!confirm('現在のデータを削除して、このmdから作り直します。よろしいですか？'))return;
+ S=d;cur=0;edit=false;last=null;$('dlg').close();render();toast('読み込みました')}
+$('fi').addEventListener('change',async ev=>{const f=ev.target.files[0];if(f){$('dta').value=await f.text()}ev.target.value=''});
+
+/* ---- events ---- */
+document.addEventListener('toggle',ev=>{if(ev.target.id==='menu')menuOpen=ev.target.open},true);
+document.addEventListener('click',ev=>{
+ const b=ev.target.closest('[data-a]');if(!b)return;
+ const a=b.dataset.a,i=+b.dataset.i,j=+b.dataset.j,t=S.tables[i],l=t&&t.排出一覧;
+ switch(a){
+  case'tab':cur=i;break;
+  case'addT':S.tables.push(newTable('テーブル'+(S.tables.length+1)));cur=S.tables.length-1;edit=true;tabEnd=true;break;
+  case'inc':l[j].排出数++;last=i+':'+j;break;
+  case'dec':if(l[j].排出数>0)l[j].排出数--;break;
+  case'up':if(j>0)[l[j-1],l[j]]=[l[j],l[j-1]];break;
+  case'dn':if(j<l.length-1)[l[j+1],l[j]]=[l[j],l[j+1]];break;
+  case'del':if(!confirm('この項目を削除しますか？'))return;l.splice(j,1);last=null;break;
+  case'add':l.push({ランク:b.dataset.k,名前:'',排出数:0});fl=true;break;
+  case'delT':if(!confirm(`「${t.テーブル名}」を削除しますか？`))return;S.tables.splice(i,1);if(!S.tables.length)S.tables.push(newTable('テーブル1'));cur=Math.min(cur,S.tables.length-1);last=null;break;
+  case'tl':case'tr':{const k=a==='tl'?i-1:i+1;if(k<0||k>=S.tables.length)return;[S.tables[i],S.tables[k]]=[S.tables[k],S.tables[i]];cur=k;last=null;tabShow=true;break}
+  case'edit':edit=!edit;break;
+  case'exp':openExport();return;
+  case'imp':openImport();return;
+  case'copy':copy();return;
+  case'save':download();return;
+  case'pick':$('fi').click();return;
+  case'load':doImport();return;
+  case'close':$('dlg').close();return;
+ }
+ render()});
+document.addEventListener('change',ev=>{
+ const el=ev.target,f=el.dataset.f;if(!f)return;
+ const v=el.value,i=+el.dataset.i,j=+el.dataset.j,t=S.tables[i];
+ if(f==='title'){S.title=v;save();return}
+ if(f==='menu'){t[K(el.dataset.k)]=v.split('\n').map(x=>x.trim()).filter(Boolean);save();return}
+ if(f==='tname')t.テーブル名=v;
+ else{const x=t.排出一覧[j];if(f==='rank')x.ランク=v;else if(f==='name')x.名前=v;else if(f==='cnt')x.排出数=Math.max(0,parseInt(v)||0)}
+ render()});
+render();
+</script>
+</body>
+</html>
