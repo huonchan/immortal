@@ -1,3 +1,12 @@
+# ツールリンク
+- [統計](https://huonchan.github.io/immortal/document/game/yo-kai_watch_4/crank_a_kai/source/gacha_counter.html)
+
+
+
+--
+
+
+
 
 # ガシャ統計
 - [鬼ガシャコイン・超](https://huonchan.github.io/immortal/document/game/yo-kai_watch_4/crank_a_kai/source/鬼ガシャコイン・超.html)
