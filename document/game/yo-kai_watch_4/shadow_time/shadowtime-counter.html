@@ -231,7 +231,7 @@ function render(){
   window.scrollTo(0,y);
 }
 
-function safeName(){return (state.fileName.trim()||DEFNAME).replace(/[\\\/:*?"<>|]/g,'_');}
+function safeName(){return (state.fileName.trim()||DEFNAME).replace(/\.(md|markdown|tsv)$/i,'').replace(/[\\\/:*?"<>|]/g,'_');}
 async function saveFile(blob,name,mime,ext,desc){
   if(window.showSaveFilePicker){
     try{
