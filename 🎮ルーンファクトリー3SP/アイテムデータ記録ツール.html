@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>アイテムデータ記録ツール</title>
+<style>
+:root{--bg:#f6f6f3;--fg:#222;--mut:#777;--bd:#d4d4cc;--card:#fff;--ac:#2f6fdb;--dg:#c0392b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1c1f;--fg:#e8e8e6;--mut:#999;--bd:#3a3c42;--card:#25272b;--ac:#6ea0ff;--dg:#ff7b6b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1b1c1f;--fg:#e8e8e6;--mut:#999;--bd:#3a3c42;--card:#25272b;--ac:#6ea0ff;--dg:#ff7b6b;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;padding:12px 12px 120px}
+main{max-width:860px;margin:0 auto}
+h1{font-size:18px;margin:4px 0 10px}
+button{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:4px 10px;cursor:pointer}
+button:hover{border-color:var(--ac)}
+button.p{background:var(--ac);border-color:var(--ac);color:#fff}
+button.x{color:var(--dg);padding:2px 7px}
+input,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--bd);border-radius:5px;padding:4px 6px}
+input:focus,textarea:focus{outline:2px solid var(--ac);outline-offset:-1px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.cat{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:14px}
+.row{display:flex;align-items:center;gap:4px}
+.row input{flex:1;min-width:0}
+.cat>.row input{font-size:17px;font-weight:700}
+.item{border-left:3px solid var(--ac);margin:10px 0 10px 6px;padding-left:10px}
+.item .row input{font-weight:600}
+.br{color:var(--mut)}
+textarea.d{width:100%;margin:6px 0;resize:vertical}
+.tw{overflow-x:auto;margin-bottom:6px}
+table{border-collapse:collapse}
+th,td{border:1px solid var(--bd);padding:2px;white-space:nowrap}
+th{background:var(--bg)}
+td input,th input{width:84px;border:0;background:transparent}
+th .x{border:0;background:none;padding:0 4px;font-size:12px}
+td.n,th.n{border:0;background:none}
+#sc{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--bd);padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px))}
+#sc .in{max-width:860px;margin:0 auto}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.chip{display:inline-flex;border:1px solid var(--bd);border-radius:6px;overflow:hidden}
+.chip button{border:0;border-radius:0}
+.chip .x{border-left:1px solid var(--bd);font-size:12px}
+.lb{font-size:12px;color:var(--mut);margin-bottom:4px}
+#toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:8px;display:none;z-index:9;max-width:90%}
+#fb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:8;padding:20px}
+#fb>div{background:var(--card);max-width:700px;margin:0 auto;padding:12px;border-radius:10px}
+#fb textarea{width:100%;height:50vh;font-family:monospace}
+</style>
+</head>
+<body>
+<main>
+<h1>アイテムデータ記録ツール</h1>
+<div class="row" style="margin-bottom:10px"><label class="lb" for="fn" style="margin:0">ファイル名</label><input id="fn" type="text" style="max-width:260px" placeholder="アイテムデータ記録"><span class="br">.md</span></div>
+<div class="bar">
+<button class="p" id="addCat">＋ カテゴリー追加</button>
+<button id="imp">mdインポート</button>
+<button id="exp">mdエクスポート</button>
+<input type="file" id="file" accept=".md,text/markdown,text/plain" hidden>
+</div>
+<div id="root"></div>
+</main>
+<div id="sc"><div class="in">
+<div class="lb">ショートカットワード（直前に選んだ入力欄のカーソル位置へ挿入）</div>
+<div class="chips" id="chips"></div>
+<div class="row"><input id="newsc" placeholder="新しいワード" style="max-width:200px"><button id="addsc">追加</button></div>
+</div></div>
+<div id="toast"></div>
+<div id="fb"><div><div class="lb">ダウンロードが使えないため、下のテキストをコピーして.mdとして保存してください。</div><textarea id="fbt" readonly></textarea><div class="bar" style="margin:8px 0 0"><button id="fbc">閉じる</button></div></div></div>
+<script>
+const KEY='rf3_itemdata_v1';
+const $=s=>document.querySelector(s);
+const def=()=>({cats:[],sc:['売価','買値']});
+const newItem=()=>({name:'アイテム名',desc:'',h:['Lv','売値','買値'],r:[['1','','']]});
+let S=def(),last=null;
+try{const j=localStorage.getItem(KEY);if(j){const o=JSON.parse(j);if(o&&Array.isArray(o.cats)&&Array.isArray(o.sc))S=o}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3000)}
+function h(t,a,...c){const e=document.createElement(t);for(const k in a||{}){const v=a[k];if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else if(k==='class')e.className=v;else e.setAttribute(k,v)}c.flat().forEach(x=>e.append(x));return e}
+function inp(o,k,ph){const e=h('input',{type:'text','data-e':1,placeholder:ph||''});e.value=o[k];e.addEventListener('input',()=>{o[k]=e.value;save()});return e}
+function cell(arr,i){const e=h('input',{type:'text','data-e':1});e.value=arr[i];e.addEventListener('input',()=>{arr[i]=e.value;save()});return e}
+function del(fn){return h('button',{class:'x',title:'削除（2回押す）',onclick(ev){const b=ev.currentTarget;if(b.dataset.a){fn()}else{b.dataset.a=1;b.textContent='削除?';setTimeout(()=>{b.dataset.a='';b.textContent='×'},2500)}}},'×')}
+function chg(){save();render()}
+function itemEl(c,it){
+  const ta=h('textarea',{class:'d','data-e':1,placeholder:'説明',rows:Math.max(1,it.desc.split('\n').length)});
+  ta.value=it.desc;
+  ta.addEventListener('input',()=>{it.desc=ta.value;ta.rows=Math.max(1,ta.value.split('\n').length);save()});
+  const hr=h('tr',{},it.h.map((_,i)=>h('th',{},cell(it.h,i),it.h.length>1?del(()=>{it.h.splice(i,1);it.r.forEach(r=>r.splice(i,1));chg()}):'')),
+    h('th',{class:'n'},h('button',{onclick(){it.h.push('列');it.r.forEach(r=>r.push(''));chg()}},'＋列')));
+  const body=it.r.map((r,ri)=>h('tr',{},r.map((_,i)=>h('td',{},cell(r,i))),h('td',{class:'n'},it.r.length>1?del(()=>{it.r.splice(ri,1);chg()}):'')));
+  return h('div',{class:'item'},
+    h('div',{class:'row'},h('span',{class:'br'},'［'),inp(it,'name','アイテム名'),h('span',{class:'br'},'］'),del(()=>{c.items.splice(c.items.indexOf(it),1);chg()})),
+    ta,
+    h('div',{class:'tw'},h('table',{},h('thead',{},hr),h('tbody',{},body))),
+    h('button',{onclick(){it.r.push(it.h.map(()=>''));chg()}},'＋行'));
+}
+function catEl(c){
+  return h('section',{class:'cat'},
+    h('div',{class:'row'},h('span',{class:'br'},'［'),inp(c,'name','カテゴリー'),h('span',{class:'br'},'］'),del(()=>{S.cats.splice(S.cats.indexOf(c),1);chg()})),
+    c.items.map(it=>itemEl(c,it)),
+    h('button',{onclick(){c.items.push(newItem());chg()}},'＋ アイテム名を追加'));
+}
+function render(){$('#root').replaceChildren(...S.cats.map(catEl));last=null;renderSc()}
+function renderSc(){
+  $('#chips').replaceChildren(...S.sc.map((w,i)=>h('span',{class:'chip'},
+    h('button',{onmousedown:e=>e.preventDefault(),onclick(){ins(w)}},w),
+    h('button',{class:'x',title:'削除',onmousedown:e=>e.preventDefault(),onclick(){S.sc.splice(i,1);save();renderSc()}},'×'))));
+}
+function ins(w){
+  if(!last||!document.contains(last)){toast('先に入力欄をクリックしてください');return}
+  const s=last.selectionStart??last.value.length,e=last.selectionEnd??s;
+  last.setRangeText(w,s,e,'end');last.dispatchEvent(new Event('input',{bubbles:true}));last.focus();
+}
+document.addEventListener('focusin',e=>{if(e.target.dataset&&e.target.dataset.e)last=e.target});
+$('#addsc').onclick=()=>{const v=$('#newsc').value.trim();if(!v)return;if(!S.sc.includes(v))S.sc.push(v);$('#newsc').value='';save();renderSc()};
+$('#newsc').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#addsc').click()}});
+$('#addCat').onclick=()=>{S.cats.push({name:'カテゴリー',items:[newItem()]});chg()};
+
+const esc=s=>String(s).replace(/\|/g,'｜').replace(/\r?\n/g,' ').trim();
+function toMd(){
+  let o='';
+  S.cats.forEach(c=>{o+='# '+esc(c.name)+'\n';c.items.forEach(i=>{
+    o+='## '+esc(i.name)+'\n'+(i.desc.trim()?i.desc.trim()+'\n':'');
+    o+='| '+i.h.map(esc).join(' | ')+' |\n| '+i.h.map(()=>'----').join(' | ')+' |\n';
+    i.r.forEach(r=>{o+='| '+r.map(esc).join(' | ')+' |\n'});o+='\n'})});
+  return o+'# format\nRF3_itemdata\n## shortcut_word\n'+S.sc.map(w=>'- '+w).join('\n')+'\n';
+}
+const nm=s=>s.trim().replace(/^［(.*)］\+?$/,'$1');
+const cells=l=>l.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(s=>s.trim());
+function parse(t){
+  const L=t.replace(/\r/g,'').split('\n');
+  const fi=L.findIndex(l=>l.trim()==='# format');
+  if(fi<0)return null;
+  const F=L.slice(fi+1).filter(l=>l.trim());
+  if(!F.length||F[0].trim()!=='RF3_itemdata')return null;
+  const si=F.findIndex(l=>l.trim()==='## shortcut_word');
+  const sc=si<0?def().sc:F.slice(si+1).filter(l=>/^-\s/.test(l)).map(l=>l.replace(/^-\s*/,'').trim()).filter(Boolean);
+  const cats=[];let c=null,it=null,tl=[];
+  const fin=()=>{if(!it)return;
+    if(tl.length){it.h=cells(tl[0]);let rs=tl.slice(1);if(rs.length&&cells(rs[0]).every(x=>/^:?-+:?$/.test(x)))rs=rs.slice(1);it.r=rs.map(cells)}
+    else{it.h=newItem().h;it.r=newItem().r}
+    const n=it.h.length;it.r=it.r.map(r=>{r=r.slice(0,n);while(r.length<n)r.push('');return r});
+    if(!it.r.length)it.r=[it.h.map(()=>'')];
+    it.desc=it.desc.replace(/\s+$/,'');it=null;tl=[]};
+  for(const l of L.slice(0,fi)){
+    if(l.startsWith('## ')){fin();if(!c){c={name:'カテゴリー',items:[]};cats.push(c)}it={name:nm(l.slice(3)),desc:'',h:[],r:[]};c.items.push(it)}
+    else if(l.startsWith('# ')){fin();c={name:nm(l.slice(2)),items:[]};cats.push(c)}
+    else if(it){if(l.trim().startsWith('|'))tl.push(l);else if(!tl.length)it.desc+=l+'\n'}
+  }
+  fin();
+  return{cats,sc};
+}
+$('#imp').onclick=()=>$('#file').click();
+$('#file').onchange=e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{const d=parse(String(r.result));
+    if(!d){toast('データ形式不適合：formatにRF3_itemdataが無いためインポートを拒否しました');return}
+    d.fn=f.name.replace(/\.(md|markdown|txt)$/i,'');S=d;fnEl.value=d.fn;chg();toast('インポートしました（現在のデータを上書き）')};
+  r.onerror=()=>toast('ファイルを読み込めませんでした');
+  r.readAsText(f,'utf-8');
+};
+$('#exp').onclick=async()=>{
+  const md=toMd();let d=null;const fname=(fnEl.value.trim()||'アイテムデータ記録').replace(/[\\/:*?"<>|]/g,'_')+'.md';
+  try{d=window.claude&&await window.claude.use('downloads')}catch(e){}
+  if(d){try{await d.save({filename:fname,data:md})}catch(e){if(e&&e.code!=='declined')toast('保存できませんでした')}}
+  else{
+    try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([md],{type:'text/markdown'}));a.download=fname;document.body.append(a);a.click();a.remove();toast('ダウンロードを試しました。保存されない場合は表示のテキストをコピーしてください')}catch(e){}
+    $('#fbt').value=md;$('#fb').style.display='block';
+  }
+};
+$('#fbc').onclick=()=>$('#fb').style.display='none';
+const fnEl=$('#fn');fnEl.value=S.fn||'アイテムデータ記録';
+fnEl.addEventListener('input',()=>{S.fn=fnEl.value;save()});
+render();
+</script>
+</body>
+</html>
