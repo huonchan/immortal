@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="ja"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🗺️シアレンスの迷宮</title>
+
+<!-- =====================================================================
+  ▼ 初期データ領域（ここだけ直接編集しても動作します）
+====================================================================== -->
+<script id="app-data" type="application/json">
+{
+  "fileName": "🗺️シアレンスの迷宮",
+  "lastExported": "2026/11/15 20:45:20",
+  "remarks": "［備考］",
+  "tables": [
+    {
+      "name": "若樹の根元に眠る謎",
+      "items": [
+        {
+          "name": "アント",
+          "count": 0
+        },
+        {
+          "name": "ヴィーグル",
+          "count": 0
+        },
+        {
+          "name": "エレパン",
+          "count": 0
+        },
+        {
+          "name": "オニオンゴースト",
+          "count": 0
+        },
+        {
+          "name": "キラーアント",
+          "count": 0
+        },
+        {
+          "name": "キャプテンゴブリン",
+          "count": 0
+        },
+        {
+          "name": "ゴブリンドン",
+          "count": 0
+        },
+        {
+          "name": "スコーピオン",
+          "count": 0
+        },
+        {
+          "name": "スパイダー",
+          "count": 0
+        },
+        {
+          "name": "チンピラゴブリン",
+          "count": 0
+        },
+        {
+          "name": "ハイオーク",
+          "count": 0
+        },
+        {
+          "name": "バッファロー",
+          "count": 0
+        },
+        {
+          "name": "ビートル",
+          "count": 0
+        },
+        {
+          "name": "フラワーブロッサム",
+          "count": 0
+        },
+        {
+          "name": "ホーネット",
+          "count": 0
+        },
+        {
+          "name": "モコモコ",
+          "count": 0
+        },
+        {
+          "name": "ブランコア",
+          "count": 0
+        },
+        {
+          "name": "ブラックバード",
+          "count": 0
+        }
+      ]
+    }
+  ]
+}
+</script>
+<!-- ===================================================================== -->
+
+<style>
+  :root {
+    --bg: #121212;
+    --surface: #1e1e1e;
+    --surface-2: #2a2a2a;
+    --border: #333333;
+    --text: #e0e0e0;
+    --text-muted: #888888;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --danger: #ef4444;
+    --success: #10b981;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.2;
+    padding: 4px;
+    padding-bottom: 40px;
+  }
+
+  input, textarea, button {
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    outline: none;
+  }
+
+  input:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+
+  button {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    touch-action: manipulation;
+  }
+
+  button:active {
+    opacity: 0.7;
+  }
+
+  /* ヘッダー領域 */
+  .header-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 6px;
+    margin-bottom: 6px;
+  }
+
+  .header-top {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-bottom: 3px;
+  }
+
+  .file-name-input {
+    flex: 1;
+    font-weight: bold;
+    padding: 3px 5px;
+    font-size: 14px;
+  }
+
+  .btn-export {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: bold;
+    padding: 4px 8px;
+    white-space: nowrap;
+  }
+
+  .btn-md {
+    background: var(--surface-2);
+    padding: 4px 6px;
+    white-space: nowrap;
+    font-size: 11px;
+  }
+
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 3px;
+  }
+
+  .btn-reset {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+
+  .remarks-input {
+    width: 100%;
+    padding: 3px 5px;
+    resize: vertical;
+    min-height: 24px;
+    height: 26px;
+    font-size: 12px;
+  }
+
+  /* テーブルカード */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 6px;
+    overflow: hidden;
+  }
+
+  .table-header {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 4px;
+    background: #252525;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-name-input {
+    flex: 1;
+    font-weight: bold;
+    padding: 2px 4px;
+    background: var(--bg);
+  }
+
+  .btn-icon {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    font-size: 11px;
+  }
+
+  .btn-del {
+    color: var(--danger);
+    border-color: #442222;
+  }
+
+  /* データ行 */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  th {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: normal;
+    text-align: left;
+    padding: 2px 4px;
+    border-bottom: 1px solid var(--border);
+    background: #1a1a1a;
+  }
+
+  td {
+    padding: 1px 2px;
+    border-bottom: 1px solid #262626;
+    vertical-align: middle;
+    height: 25px;
+  }
+
+  .col-move { width: 42px; text-align: center; }
+  .col-name { width: auto; }
+  .col-count { width: 82px; }
+  .col-rate { width: 62px; text-align: right; padding-right: 4px; font-variant-numeric: tabular-nums; font-size: 12px; }
+  .col-del { width: 22px; text-align: center; }
+
+  .move-group {
+    display: flex;
+    gap: 1px;
+    justify-content: center;
+  }
+
+  .btn-mini {
+    width: 19px;
+    height: 21px;
+    font-size: 10px;
+    padding: 0;
+  }
+
+  .item-name-input {
+    width: 100%;
+    height: 21px;
+    padding: 0 4px;
+    border-color: transparent;
+    background: transparent;
+  }
+  .item-name-input:focus {
+    background: var(--bg);
+    border-color: var(--accent);
+  }
+
+  .count-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .item-count-input {
+    width: 48px;
+    height: 21px;
+    padding: 0 3px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .btn-plus {
+    width: 28px;
+    height: 21px;
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #fff;
+    font-weight: bold;
+    font-size: 14px;
+  }
+
+  .total-row td {
+    background: #1a1a1a;
+    font-weight: bold;
+    height: 23px;
+    border-bottom: none;
+    font-size: 12px;
+  }
+
+  .table-footer {
+    padding: 2px 4px;
+    background: #1a1a1a;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-add-row {
+    width: 100%;
+    height: 22px;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px dashed var(--border);
+  }
+
+  .btn-add-table {
+    width: 100%;
+    height: 28px;
+    font-weight: bold;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    color: var(--accent);
+  }
+
+  #toast {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--success);
+    color: #000;
+    font-weight: bold;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 100;
+  }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="header-box">
+  <div class="header-top">
+    <input type="text" id="fileName" class="file-name-input" placeholder="ファイル名" value="">
+    <button type="button" class="btn-md" onclick="copyMarkdown()" title="Markdown形式でクリップボードにコピー">MDコピー</button>
+    <button type="button" class="btn-export" onclick="exportSelfHtml()">HTML保存</button>
+  </div>
+  <div class="meta-row">
+    <span id="lastExported">最終エクスポート: -</span>
+    <button type="button" class="btn-reset" onclick="resetToEmbedded()">初期値に戻す</button>
+  </div>
+  <textarea id="remarks" class="remarks-input" placeholder="備考欄"></textarea>
+</div>
+
+<div id="tables-container"></div>
+
+<button type="button" class="btn-add-table" onclick="addTable()">＋ テーブルを追加</button>
+
+<div id="toast">保存しました</div>
+
+<script>
+  const STORAGE_KEY = 'compact_tally_tool_v1_' + location.pathname;
+
+  let state = {
+    fileName: '',
+    lastExported: '',
+    remarks: '',
+    tables: []
+  };
+
+  function init() {
+    const embeddedRaw = document.getElementById('app-data').textContent;
+    const embeddedData = JSON.parse(embeddedRaw);
+    let savedRaw = null;
+    try {
+      savedRaw = localStorage.getItem(STORAGE_KEY);
+    } catch (e) {
+      // プライベートモード等でストレージが使えない場合のフォールバック
+    }
+
+    if (savedRaw) {
+      try {
+        const savedData = JSON.parse(savedRaw);
+        if (embeddedData.lastExported && savedData.lastExported && embeddedData.lastExported > savedData.lastExported) {
+          state = embeddedData;
+          saveToStorage();
+        } else {
+          state = savedData;
+        }
+      } catch (e) {
+        state = embeddedData;
+      }
+    } else {
+      state = embeddedData;
+    }
+
+    document.getElementById('fileName').value = state.fileName || '';
+    document.getElementById('remarks').value = state.remarks || '';
+    updateMetaDisplay();
+    bindHeaderEvents();
+    render();
+  }
+
+  function bindHeaderEvents() {
+    document.getElementById('fileName').addEventListener('input', (e) => {
+      state.fileName = e.target.value;
+      document.title = state.fileName || 'データ集計ツール';
+      saveToStorage();
+    });
+    document.getElementById('remarks').addEventListener('input', (e) => {
+      state.remarks = e.target.value;
+      saveToStorage();
+    });
+  }
+
+  function updateMetaDisplay() {
+    document.title = state.fileName || 'データ集計ツール';
+    document.getElementById('lastExported').textContent = `最終エクスポート: ${state.lastExported || '未保存'}`;
+  }
+
+  function saveToStorage() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      // プライベートブラウズなどでストレージ書き込みが拒否されても動作を止めない
+    }
+  }
+
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 1500);
+  }
+
+  function render() {
+    const container = document.getElementById('tables-container');
+    container.innerHTML = '';
+
+    state.tables.forEach((table, tIdx) => {
+      const total = table.items.reduce((sum, item) => sum + (Number(item.count) || 0), 0);
+
+      const card = document.createElement('div');
+      card.className = 'table-card';
+
+      const header = document.createElement('div');
+      header.className = 'table-header';
+      header.innerHTML = `
+        <button type="button" class="btn-icon" onclick="moveTable(${tIdx}, -1)" ${tIdx === 0 ? 'disabled' : ''}>▲</button>
+        <button type="button" class="btn-icon" onclick="moveTable(${tIdx}, 1)" ${tIdx === state.tables.length - 1 ? 'disabled' : ''}>▼</button>
+        <input type="text" class="table-name-input" value="${escapeHtml(table.name)}" oninput="updateTableName(${tIdx}, this.value)" placeholder="テーブル名">
+        <button type="button" class="btn-icon btn-del" onclick="deleteTable(${tIdx})" title="テーブル削除">✕</button>
+      `;
+      card.appendChild(header);
+
+      const tbl = document.createElement('table');
+      tbl.innerHTML = `
+        <thead>
+          <tr>
+            <th class="col-move">順序</th>
+            <th class="col-name">名前</th>
+            <th class="col-count">個数</th>
+            <th class="col-rate">割合</th>
+            <th class="col-del"></th>
+          </tr>
+        </thead>
+      `;
+
+      const tbody = document.createElement('tbody');
+      table.items.forEach((item, iIdx) => {
+        const count = Number(item.count) || 0;
+        const rate = total > 0 ? ((count / total) * 100).toFixed(3) + '%' : '0.000%';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="col-move">
+            <div class="move-group">
+              <button type="button" class="btn-mini" onclick="moveItem(${tIdx}, ${iIdx}, -1)" ${iIdx === 0 ? 'disabled' : ''}>▲</button>
+              <button type="button" class="btn-mini" onclick="moveItem(${tIdx}, ${iIdx}, 1)" ${iIdx === table.items.length - 1 ? 'disabled' : ''}>▼</button>
+            </div>
+          </td>
+          <td class="col-name">
+            <input type="text" class="item-name-input" value="${escapeHtml(item.name)}" oninput="updateItemName(${tIdx}, ${iIdx}, this.value)" placeholder="項目名">
+          </td>
+          <td class="col-count">
+            <div class="count-group">
+              <input type="number" inputmode="numeric" class="item-count-input" value="${count}" oninput="updateItemCount(${tIdx}, ${iIdx}, this.value)">
+              <button type="button" class="btn-plus" onclick="incrementItem(${tIdx}, ${iIdx})">+</button>
+            </div>
+          </td>
+          <td class="col-rate" id="rate-${tIdx}-${iIdx}">${rate}</td>
+          <td class="col-del">
+            <button type="button" class="btn-mini btn-del" onclick="deleteItem(${tIdx}, ${iIdx})">✕</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const totalRate = total > 0 ? '100.000%' : '0.000%';
+      const totalTr = document.createElement('tr');
+      totalTr.className = 'total-row';
+      totalTr.innerHTML = `
+        <td></td>
+        <td style="padding-left:6px;">合計</td>
+        <td style="text-align:right; padding-right:32px;" id="total-count-${tIdx}">${total}</td>
+        <td class="col-rate" id="total-rate-${tIdx}">${totalRate}</td>
+        <td></td>
+      `;
+      tbody.appendChild(totalTr);
+
+      tbl.appendChild(tbody);
+      card.appendChild(tbl);
+
+      const footer = document.createElement('div');
+      footer.className = 'table-footer';
+      footer.innerHTML = `<button type="button" class="btn-add-row" onclick="addItem(${tIdx})">＋ 項目を追加</button>`;
+      card.appendChild(footer);
+
+      container.appendChild(card);
+    });
+  }
+
+  function updateRatesOnly(tIdx) {
+    const table = state.tables[tIdx];
+    const total = table.items.reduce((sum, item) => sum + (Number(item.count) || 0), 0);
+
+    table.items.forEach((item, iIdx) => {
+      const count = Number(item.count) || 0;
+      const rate = total > 0 ? ((count / total) * 100).toFixed(3) + '%' : '0.000%';
+      const rateEl = document.getElementById(`rate-${tIdx}-${iIdx}`);
+      if (rateEl) rateEl.textContent = rate;
+    });
+
+    const totalCountEl = document.getElementById(`total-count-${tIdx}`);
+    const totalRateEl = document.getElementById(`total-rate-${tIdx}`);
+    if (totalCountEl) totalCountEl.textContent = total;
+    if (totalRateEl) totalRateEl.textContent = total > 0 ? '100.000%' : '0.000%';
+  }
+
+  function addTable() {
+    state.tables.push({
+      name: `テーブル${state.tables.length + 1}`,
+      items: [{ name: '項目1', count: 0 }]
+    });
+    saveToStorage();
+    render();
+  }
+
+  function deleteTable(tIdx) {
+    if (!confirm(`「${state.tables[tIdx].name}」を削除しますか？`)) return;
+    state.tables.splice(tIdx, 1);
+    saveToStorage();
+    render();
+  }
+
+  function moveTable(tIdx, dir) {
+    const target = tIdx + dir;
+    if (target < 0 || target >= state.tables.length) return;
+    [state.tables[tIdx], state.tables[target]] = [state.tables[target], state.tables[tIdx]];
+    saveToStorage();
+    render();
+  }
+
+  function updateTableName(tIdx, val) {
+    state.tables[tIdx].name = val;
+    saveToStorage();
+  }
+
+  function addItem(tIdx) {
+    const items = state.tables[tIdx].items;
+    items.push({ name: `項目${items.length + 1}`, count: 0 });
+    saveToStorage();
+    render();
+  }
+
+  function deleteItem(tIdx, iIdx) {
+    state.tables[tIdx].items.splice(iIdx, 1);
+    saveToStorage();
+    render();
+  }
+
+  function moveItem(tIdx, iIdx, dir) {
+    const items = state.tables[tIdx].items;
+    const target = iIdx + dir;
+    if (target < 0 || target >= items.length) return;
+    [items[iIdx], items[target]] = [items[target], items[iIdx]];
+    saveToStorage();
+    render();
+  }
+
+  function updateItemName(tIdx, iIdx, val) {
+    state.tables[tIdx].items[iIdx].name = val;
+    saveToStorage();
+  }
+
+  function updateItemCount(tIdx, iIdx, val) {
+    state.tables[tIdx].items[iIdx].count = val === '' ? 0 : Number(val);
+    saveToStorage();
+    updateRatesOnly(tIdx);
+  }
+
+  function incrementItem(tIdx, iIdx) {
+    const item = state.tables[tIdx].items[iIdx];
+    item.count = (Number(item.count) || 0) + 1;
+    saveToStorage();
+    render();
+  }
+
+  function resetToEmbedded() {
+    if (!confirm('ローカルストレージの一時保存データを破棄し、このHTMLファイル内の初期データに戻しますか？')) return;
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {}
+    const embeddedRaw = document.getElementById('app-data').textContent;
+    state = JSON.parse(embeddedRaw);
+    document.getElementById('fileName').value = state.fileName || '';
+    document.getElementById('remarks').value = state.remarks || '';
+    updateMetaDisplay();
+    render();
+    showToast('初期データに戻しました');
+  }
+
+  function getFormattedNow() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const mm = pad(d.getMonth() + 1);
+    const dd = pad(d.getDate());
+    const hh = pad(d.getHours());
+    const mi = pad(d.getMinutes());
+    const ss = pad(d.getSeconds());
+    return {
+      display: `${yyyy}/${mm}/${dd} ${hh}:${mi}:${ss}`,
+      fileStamp: `${yyyy}${mm}${dd}-${hh}${mi}${ss}`
+    };
+  }
+
+  function exportSelfHtml() {
+    const now = getFormattedNow();
+    state.lastExported = now.display;
+    saveToStorage();
+    updateMetaDisplay();
+
+    const docClone = document.documentElement.cloneNode(true);
+    const dataScript = docClone.querySelector('#app-data');
+    dataScript.textContent = '\n' + JSON.stringify(state, null, 2) + '\n';
+
+    docClone.querySelector('#tables-container').innerHTML = '';
+    docClone.querySelector('#fileName').setAttribute('value', '');
+    docClone.querySelector('#remarks').textContent = '';
+    docClone.querySelector('#lastExported').textContent = '最終エクスポート: -';
+    docClone.querySelector('#toast').classList.remove('show');
+
+    const htmlContent = '<!DOCTYPE html>\n' + docClone.outerHTML;
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    const baseName = (state.fileName || 'data').replace(/[\\/:*?"<>|]/g, '_');
+    const downloadName = `${baseName}${now.fileStamp}.html`;
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = downloadName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast('HTMLを出力しました');
+  }
+
+  function copyMarkdown() {
+    let md = `# ${state.fileName}\n`;
+    md += `最終エクスポート日時:${state.lastExported || getFormattedNow().display}\n`;
+    md += `## 備考欄\n${state.remarks}\n`;
+
+    state.tables.forEach(t => {
+      const total = t.items.reduce((sum, item) => sum + (Number(item.count) || 0), 0);
+      md += `## ${t.name}\n`;
+      md += `| 名前 | 個数 | 割合 |\n`;
+      md += `| ---- | ---- | ---- |\n`;
+      t.items.forEach(item => {
+        const c = Number(item.count) || 0;
+        const r = total > 0 ? ((c / total) * 100).toFixed(3) + '%' : '0.000%';
+        md += `| ${item.name} | ${c} | ${r} |\n`;
+      });
+      const tr = total > 0 ? '100.000%' : '0.000%';
+      md += `| 合計 | ${total} | ${tr} |\n\n`;
+    });
+
+    navigator.clipboard.writeText(md.trim()).then(() => {
+      showToast('Markdownをコピーしました');
+    }).catch(() => {
+      alert('コピーに失敗しました');
+    });
+  }
+
+  function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  init();
+</script>
+
+</body></html>
